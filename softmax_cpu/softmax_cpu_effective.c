@@ -43,8 +43,8 @@ int main() {
     softmax_cpu(input, output, N);
 
 
-    struct timespec ts1, tw1; // both C11 and POSIX
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts1); // POSIX
+    struct timespec ts1, tw1;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts1);
     clock_gettime(CLOCK_MONOTONIC, &tw1); 
     double start_time = clock();
     

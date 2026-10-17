@@ -15,15 +15,12 @@ kernel void softmax_kernel(
     threadgroup float shared_max[1024];
     threadgroup float shared_sum[1024];
 
-    // Один блок обробляє один рядок матриці
     uint idx = tg_pos.y * 1024 + t_pos.x;
     float val = input[idx];
 
-    // Початкові значення
     shared_max[t_pos.x] = val;
     shared_sum[t_pos.x] = 1.0f;
 
-    // Паралельна редукція (Дерево)
     for (uint s = 1024 / 2; s > 0; s >>= 1) {
         threadgroup_barrier(mem_flags::mem_threadgroup);
         if (t_pos.x < s) {
@@ -44,7 +41,6 @@ kernel void softmax_kernel(
     float final_max = shared_max[0];
     float final_sum = shared_sum[0];
 
-    // Фінальний запис
     output[idx] = exp(val - final_max) / final_sum;
 }
 )";
@@ -53,8 +49,6 @@ at::Tensor softmax_metal_forward(at::Tensor input) {
     auto device = MTLCreateSystemDefaultDevice();
     auto commandQueue = [device newCommandQueue];
     
-    // 1. Обов'язково перекидаємо на CPU, щоб Metal міг створити буфер, 
-    // або працюємо з raw pointers. Найстабільніше для кастомних опів:
     auto input_cpu = input.to(at::kCPU).contiguous();
     auto output_cpu = at::empty_like(input_cpu);
 
@@ -64,7 +58,6 @@ at::Tensor softmax_metal_forward(at::Tensor input) {
     id<MTLFunction> function = [library newFunctionWithName:@"softmax_kernel"];
     id<MTLComputePipelineState> pipeline = [device newComputePipelineStateWithFunction:function error:&error];
 
-    // 2. Створюємо Metal буфери напряму
     id<MTLBuffer> inBuffer = [device newBufferWithBytes:input_cpu.data_ptr<float>() 
                                                  length:input_cpu.nbytes() 
                                                 options:MTLResourceStorageModeShared];
@@ -88,7 +81,6 @@ at::Tensor softmax_metal_forward(at::Tensor input) {
     [commandBuffer commit];
     [commandBuffer waitUntilCompleted];
     
-    // 3. Копіюємо результат назад
     memcpy(output_cpu.data_ptr<float>(), [outBuffer contents], output_cpu.nbytes());
 
     return output_cpu.to(input.device());
