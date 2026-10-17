@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# C & Compiled binaries
+*.o
+*.so
+*.dylib
+softmax_cpu/softmax_cpu_effective
+softmax_cpu/softmax_cpu_not_effective
+video.mp4
